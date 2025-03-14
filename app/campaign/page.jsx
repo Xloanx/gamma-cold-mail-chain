@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { MdLocalPhone } from "react-icons/md";
-import { Upload } from "lucide-react";
+import { Upload, Download } from "lucide-react";
 import Navbar from "@/components/navbar"; // Import Navbar
 import { motion } from "framer-motion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -21,7 +21,7 @@ export default function ColdEmailCampaign() {
   const [objection, setObjection] = useState("");
   const [recipient_email, setRecipientEmail] = useState("");
   const [recipient_phone, setRecipientPhone] = useState("");
-  const [csvFile, setCsvFile] = useState(null);
+  const [acceptedFile, setAcceptedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [generatedEmail, setGeneratedEmail] = useState("");
   const [engagementAdvice, setEngagementAdvice] = useState("");
@@ -33,6 +33,9 @@ export default function ColdEmailCampaign() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [mode, setMode] = useState("Single");
+  const [downloadUrl, setDownloadUrl] = useState("");
+
+
 
   const dummy_script = "Hello! This is an automated call. Thank you for testing our service."
 
@@ -129,71 +132,83 @@ export default function ColdEmailCampaign() {
 };
 
 
-const handleSendToUploaded = async () =>{
-  try {
-    const response = await fetch('https://gamma-ec-auto-01.onrender.com/generate_batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-          recipient_phone: generatedData.recipient_phone || recipient_phone,
-          call_script: generatedData.call_script || dummy_script
-      }),
-  });
-  } catch (error) {
-    
-  }
-};
-
 const handleFileChange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (file.type !== "text/csv") {
-    toast.error("Only CSV files are allowed!");
-    return;
-  }
+    const validTypes = ["text/csv", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Only CSV or Excel files are allowed!");
+      return;
+    }
 
-  if (file.size > 2 * 1024 * 1024) {
-    toast.error("File size should not exceed 2MB.");
-    return;
-  }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size should not exceed 5MB.");
+      return;
+    }
 
-  setCsvFile(file);
-  toast.success("File selected successfully!");
-};
+    setAcceptedFile(file);
+    toast.success("File selected successfully!");
+  };
+
+  const handleUploadAndSend = async () => {
+    if (!acceptedFile) {
+      toast.error("Please select an appropriate file first.");
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", acceptedFile);
+    formData.append("insurance_company_name", insurance_company_name);
+    formData.append("sender_name", sender_name);
+    formData.append("sender_email", sender_email);
+
+    try { //https://gamma-ec-auto-01.onrender.com/generate_batch
+      const response = await fetch("https://gamma-cold-reach.onrender.com/api/upload", { 
+        method: "POST",
+        body: formData,
+      });
+
+      console.log(response)
+      const data = await response.json();
+      if (response.ok) {
+        toast.success("Campaign sent successfully!");
+        setDownloadUrl(data.file_url); // Store download URL from API response
+      } else {
+        toast.error("Upload failed: " + data.detail);
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error("Failed to upload file.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
 
 
-const handleUpload = async () => {
-  if (!csvFile) {
-    toast.error("Please select a file first.");
-    return;
-  }
-
-  setUploading(true);
-  const formData = new FormData();
-  formData.append("file", csvFile);
-
+const handleDownload = async () => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
+    const response = await fetch(`http://127.0.0.1:8000/api/download/${csvFile.name}`);
     if (response.ok) {
-      toast.success("File uploaded successfully!");
-      setStatus(data.message);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Campaign_Report.csv";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
     } else {
-      toast.error("Upload failed: " + data.detail);
+      toast.error("Report not ready yet.");
     }
   } catch (error) {
-    console.error("Error uploading file:", error);
-    toast.error("Failed to upload file.");
-  } finally {
-    setUploading(false);
+    console.error("Error downloading file:", error);
+    toast.error("Failed to download report.");
   }
 };
+
 
 
   return (
@@ -248,7 +263,7 @@ const handleUpload = async () => {
             </div>
           )}
 
-          <Button onClick={handleSendToUploaded} 
+          <Button onClick={handleUploadAndSend} 
                   className="bg-blue-500 text-white hover:bg-blue-600" 
                   disabled={uploading || mode === "Single" }
           >
@@ -256,6 +271,14 @@ const handleUpload = async () => {
           </Button>
         
           {/* File Upload Section ends here*/}
+
+          {/* NEW DOWNLOAD BUTTON */}
+          {downloadUrl && (
+            <Button onClick={handleDownload} className="bg-green-500 text-white hover:bg-green-600 flex items-center">
+              <Download className="mr-2" /> Download Report
+            </Button>
+          )}
+
 
 
           <Card>
