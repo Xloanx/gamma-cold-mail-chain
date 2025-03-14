@@ -30,6 +30,7 @@ export default function ColdEmailCampaign() {
   const [sender_name, setSenderName] = useState("");
   const [sender_email, setSenderEmail] = useState("");
   const [isCalling, setIsCalling] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [mode, setMode] = useState("Single");
 
@@ -43,6 +44,7 @@ export default function ColdEmailCampaign() {
   }, []);
   
   const handleGenerateCampaign = async () => {
+    setIsGenerating(true)
     try{
     const response = await fetch("https://gamma-cold-reach.onrender.com/api/email/generate", {
       method: "POST",
@@ -68,6 +70,9 @@ export default function ColdEmailCampaign() {
     } catch (error) {
       console.error("Error generating email:", error);
       toast.error("Failed to generate email.");
+    }
+    finally{
+      setIsGenerating(false)
     }
   };
 
@@ -262,7 +267,9 @@ const handleUpload = async () => {
             </CardContent>
           </Card>
 
-          <Button onClick={handleGenerateCampaign} className="bg-green-500 text-white hover:bg-green-600 mr-4" disabled={mode === "Batch"}>Generate Email</Button>
+          <Button onClick={handleGenerateCampaign} 
+                  className="bg-green-500 text-white hover:bg-green-600 mr-4" 
+                  disabled={isGenerating || mode === "Batch"}>{isGenerating ? "Generating ...": "Generate Email"}</Button>
           <Button onClick={handleSendCampaign} 
                   className="bg-blue-500 text-white hover:bg-blue-600 mr-4"
                   disabled={sending || mode === "Batch"}>{sending ? "Sending..." : "Send Campaign"}</Button>
