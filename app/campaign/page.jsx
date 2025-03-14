@@ -21,6 +21,7 @@ export default function ColdEmailCampaign() {
   const [recipient_email, setRecipientEmail] = useState("");
   const [recipient_phone, setRecipientPhone] = useState("");
   const [csvFile, setCsvFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [generatedEmail, setGeneratedEmail] = useState("");
   const [engagementAdvice, setEngagementAdvice] = useState("");
   const [generatedData, setGeneratedData] = useState("");
@@ -29,6 +30,8 @@ export default function ColdEmailCampaign() {
   const [sender_name, setSenderName] = useState("");
   const [sender_email, setSenderEmail] = useState("");
   const [isCalling, setIsCalling] = useState(false);
+  const [sending, setSending] = useState(false);
+
 
   const dummy_script = "Hello! This is an automated call. Thank you for testing our service."
 
@@ -70,6 +73,7 @@ export default function ColdEmailCampaign() {
   };
 
   const handleSendCampaign = async () => {
+    setSending(true); // Disable button
     try{
     const response = await fetch("http://127.0.0.1:8000/api/email/send", {
       method: "POST",
@@ -88,6 +92,9 @@ export default function ColdEmailCampaign() {
     } catch (error) {
       console.error("Error sending email:", error);
       toast.error("Failed to send email.");
+    }
+    finally{
+      setSending(false); // Re-enable button after completion
     }
   };
 
@@ -119,6 +126,56 @@ export default function ColdEmailCampaign() {
 };
 
 
+const handleFileChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.type !== "text/csv") {
+    toast.error("Only CSV files are allowed!");
+    return;
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error("File size should not exceed 2MB.");
+    return;
+  }
+
+  setCsvFile(file);
+  toast.success("File selected successfully!");
+};
+
+const handleUpload = async () => {
+  if (!csvFile) {
+    toast.error("Please select a file first.");
+    return;
+  }
+
+  setUploading(true);
+  const formData = new FormData();
+  formData.append("file", csvFile);
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      toast.success("File uploaded successfully!");
+      setStatus(data.message);
+    } else {
+      toast.error("Upload failed: " + data.detail);
+    }
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    toast.error("Failed to upload file.");
+  } finally {
+    setUploading(false);
+  }
+};
+
+
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-blue-500 to-purple-700">
       <Toaster position="top-right" /> {/* Toast Notification Component */}
@@ -144,11 +201,15 @@ export default function ColdEmailCampaign() {
           <Textarea placeholder="Potential Objections" value={objection} onChange={(e) => setObjection(e.target.value)} />
           <Input placeholder="Contact Email" value={recipient_email} onChange={(e) => setRecipientEmail(e.target.value)} />
           <Input placeholder="Phone Number" value={recipient_phone} onChange={(e) => setRecipientPhone(e.target.value)} />
-          
+
+          {/* File Upload Section */}
           <div className="flex items-center space-x-4">
-            <input type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files[0])} />
+            <input type="file" accept=".csv" onChange={handleFileChange} />
             <Upload />
           </div>
+          <Button onClick={handleUpload} className="bg-blue-500 text-white hover:bg-blue-600" disabled={uploading}>
+            {uploading ? "Uploading..." : "Upload CSV"}
+          </Button>
 
           <Button onClick={handleGenerateCampaign} className="bg-blue-500 text-white hover:bg-blue-600">Generate Email</Button>
 
@@ -162,7 +223,9 @@ export default function ColdEmailCampaign() {
           </Card>
 
           <Button onClick={handleGenerateCampaign} className="bg-green-500 text-white hover:bg-green-600 mr-4">Generate Email</Button>
-          <Button onClick={handleSendCampaign} className="bg-blue-500 text-white hover:bg-blue-600 mr-4">Send Campaign</Button>
+          <Button onClick={handleSendCampaign} 
+                  className="bg-blue-500 text-white hover:bg-blue-600 mr-4"
+                  disabled={sending}>{sending ? "Sending..." : "Send Campaign"}</Button>
           <motion.button
                 onClick={handleCall}
                 className="bg-red-500 text-white px-4 py-2 rounded-lg flex items-center justify-center"
