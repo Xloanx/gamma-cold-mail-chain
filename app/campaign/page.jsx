@@ -43,7 +43,7 @@ export default function ColdEmailCampaign() {
   
   const handleGenerateCampaign = async () => {
     try{
-    const response = await fetch("http://127.0.0.1:8000/api/email/generate", {
+    const response = await fetch("https://gamma-cold-reach.onrender.com/api/email/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
@@ -73,7 +73,7 @@ export default function ColdEmailCampaign() {
   const handleSendCampaign = async () => {
     setSending(true); // Disable button
     try{
-    const response = await fetch("http://127.0.0.1:8000/api/email/send", {
+    const response = await fetch("https://gamma-cold-reach.onrender.com/api/email/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
@@ -98,7 +98,7 @@ export default function ColdEmailCampaign() {
   const handleCall = async () => {
     setIsCalling(true);
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/call', {
+        const response = await fetch('https://gamma-cold-reach.onrender.com/api/call', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -123,6 +123,21 @@ export default function ColdEmailCampaign() {
 };
 
 
+const handleSendToUploaded = async () =>{
+  try {
+    const response = await fetch('https://gamma-ec-auto-01.onrender.com/generate_batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+          recipient_phone: generatedData.recipient_phone || recipient_phone,
+          call_script: generatedData.call_script || dummy_script
+      }),
+  });
+  } catch (error) {
+    
+  }
+};
+
 const handleFileChange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -141,9 +156,7 @@ const handleFileChange = (e) => {
   toast.success("File selected successfully!");
 };
 
-const handleSendToUploaded = async () =>{
 
-}
 
 const handleUpload = async () => {
   if (!csvFile) {
