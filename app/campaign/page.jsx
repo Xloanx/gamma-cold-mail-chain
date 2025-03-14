@@ -25,7 +25,6 @@ export default function ColdEmailCampaign() {
   const [generatedEmail, setGeneratedEmail] = useState("");
   const [engagementAdvice, setEngagementAdvice] = useState("");
   const [generatedData, setGeneratedData] = useState("");
-  const [status, setStatus] = useState("");
   const [insurance_company_name, setMyCompanyName] = useState("");
   const [sender_name, setSenderName] = useState("");
   const [sender_email, setSenderEmail] = useState("");
@@ -64,7 +63,6 @@ export default function ColdEmailCampaign() {
     setGeneratedEmail(data.email);
     setEngagementAdvice(data.advise)
     setGeneratedData(data);
-    setStatus(data.message);
     toast.success("Email generated successfully!");
     } catch (error) {
       console.error("Error generating email:", error);
@@ -87,7 +85,6 @@ export default function ColdEmailCampaign() {
     });
     const data = await response.json();
     console.log(data)
-    setStatus(data.message);
     toast.success("Email sent successfully!");
     } catch (error) {
       console.error("Error sending email:", error);
@@ -143,6 +140,10 @@ const handleFileChange = (e) => {
   setCsvFile(file);
   toast.success("File selected successfully!");
 };
+
+const handleSendToUploaded = async () =>{
+
+}
 
 const handleUpload = async () => {
   if (!csvFile) {
@@ -207,11 +208,11 @@ const handleUpload = async () => {
             <input type="file" accept=".csv" onChange={handleFileChange} />
             <Upload />
           </div>
-          <Button onClick={handleUpload} className="bg-blue-500 text-white hover:bg-blue-600" disabled={uploading}>
+          {/* <Button onClick={handleUpload} className="bg-blue-500 text-white hover:bg-blue-600" >
             {uploading ? "Uploading..." : "Upload CSV"}
-          </Button>
+          </Button> */}
 
-          <Button onClick={handleGenerateCampaign} className="bg-blue-500 text-white hover:bg-blue-600">Generate Email</Button>
+          <Button onClick={handleSendToUploaded} className="bg-blue-500 text-white hover:bg-blue-600" disabled={uploading}>{uploading ? "Uploading..." : "Upload & Send Campaign"} </Button>
 
           <Card>
             <CardContent>
@@ -235,7 +236,6 @@ const handleUpload = async () => {
                 <MdLocalPhone className="mr-2" />
                 {isCalling ? "Calling..." : "Initiate Cold Call"}
             </motion.button>
-          {/* {status && <p className="text-green-600">Status: {status}</p>} */}
         </div>
       </div>
     </div>
