@@ -12,6 +12,7 @@ import { MdLocalPhone } from "react-icons/md";
 import { Upload } from "lucide-react";
 import Navbar from "@/components/navbar"; // Import Navbar
 import { motion } from "framer-motion";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function ColdEmailCampaign() {
   const [company_name, setCompanyName] = useState("");
@@ -30,7 +31,7 @@ export default function ColdEmailCampaign() {
   const [sender_email, setSenderEmail] = useState("");
   const [isCalling, setIsCalling] = useState(false);
   const [sending, setSending] = useState(false);
-
+  const [mode, setMode] = useState("Single");
 
   const dummy_script = "Hello! This is an automated call. Thank you for testing our service."
 
@@ -201,8 +202,25 @@ const handleUpload = async () => {
       <div className="flex justify-center items-center min-h-screen pt-16">
         <div className="max-w-2xl w-full p-6 space-y-6 border rounded-lg shadow-lg bg-white">
           <h1 className="text-xl font-bold text-center">AI Cold Email Campaign</h1>
-          <Input placeholder="Company Name" value={company_name} onChange={(e) => setCompanyName(e.target.value)} />
-          <Input placeholder="Industry" value={industry} onChange={(e) => setIndustry(e.target.value)} />
+
+          <div>
+            <label className="font-semibold">Select Mode:</label>
+            <RadioGroup
+              defaultValue="Single"
+              onValueChange={setMode}
+              className="flex space-x-4 mt-2"
+            >
+              <RadioGroupItem value="Single" id="single" />
+              <label htmlFor="single">Single</label>
+
+              <RadioGroupItem value="Batch" id="batch" />
+              <label htmlFor="batch">Batch</label>
+            </RadioGroup>
+          </div>
+
+
+          <Input placeholder="Company Name" value={company_name} onChange={(e) => setCompanyName(e.target.value)} disabled={mode === "Batch"}/>
+          <Input placeholder="Industry" value={industry} onChange={(e) => setIndustry(e.target.value)} disabled={mode === "Batch"}/>
           <label>Engagement Level: {engagement_level}</label>
           <Slider 
             min={1} 
@@ -210,41 +228,50 @@ const handleUpload = async () => {
             step={1} 
             value={[engagement_level]} 
             onValueChange={(val) => setEngagementLevel(val[0])} 
+            disabled={mode === "Batch"}
           />
 
-          <Textarea placeholder="Potential Objections" value={objection} onChange={(e) => setObjection(e.target.value)} />
-          <Input placeholder="Contact Email" value={recipient_email} onChange={(e) => setRecipientEmail(e.target.value)} />
-          <Input placeholder="Phone Number" value={recipient_phone} onChange={(e) => setRecipientPhone(e.target.value)} />
+          <Textarea placeholder="Potential Objections" value={objection} onChange={(e) => setObjection(e.target.value)} disabled={mode === "Batch"}/>
+          <Input placeholder="Contact Email" value={recipient_email} onChange={(e) => setRecipientEmail(e.target.value)} disabled={mode === "Batch"}/>
+          <Input placeholder="Phone Number" value={recipient_phone} onChange={(e) => setRecipientPhone(e.target.value)} disabled={mode === "Batch"}/>
 
           {/* File Upload Section */}
-          <div className="flex items-center space-x-4">
-            <input type="file" accept=".csv" onChange={handleFileChange} />
-            <Upload />
-          </div>
-          {/* <Button onClick={handleUpload} className="bg-blue-500 text-white hover:bg-blue-600" >
-            {uploading ? "Uploading..." : "Upload CSV"}
-          </Button> */}
+          {mode === "Batch" && (
+            <div className="flex items-center space-x-4">
+              <input type="file" accept=".csv" onChange={handleFileChange} />
+              <Upload />
+            </div>
+          )}
 
-          <Button onClick={handleSendToUploaded} className="bg-blue-500 text-white hover:bg-blue-600" disabled={uploading}>{uploading ? "Uploading..." : "Upload & Send Campaign"} </Button>
+          <Button onClick={handleSendToUploaded} 
+                  className="bg-blue-500 text-white hover:bg-blue-600" 
+                  disabled={uploading || mode === "Single" }
+          >
+            {uploading ? "Uploading..." :  "Upload & Send Campaign"}
+          </Button>
+        
+          {/* File Upload Section ends here*/}
+
 
           <Card>
             <CardContent>
               <h2 className="font-semibold">Email Preview</h2>
-              <Textarea value={generatedEmail} onChange={(e) => setGeneratedEmail(e.target.value)} rows={7}/>
+              <Textarea value={generatedEmail} onChange={(e) => setGeneratedEmail(e.target.value)} rows={7} disabled={mode === "Batch"}/>
               <h2 className="font-semibold mt-4">Engagement Advice</h2>
               <p>{engagementAdvice}</p>
             </CardContent>
           </Card>
 
-          <Button onClick={handleGenerateCampaign} className="bg-green-500 text-white hover:bg-green-600 mr-4">Generate Email</Button>
+          <Button onClick={handleGenerateCampaign} className="bg-green-500 text-white hover:bg-green-600 mr-4" disabled={mode === "Batch"}>Generate Email</Button>
           <Button onClick={handleSendCampaign} 
                   className="bg-blue-500 text-white hover:bg-blue-600 mr-4"
-                  disabled={sending}>{sending ? "Sending..." : "Send Campaign"}</Button>
+                  disabled={sending || mode === "Batch"}>{sending ? "Sending..." : "Send Campaign"}</Button>
           <motion.button
                 onClick={handleCall}
                 className="bg-red-500 text-white px-4 py-2 rounded-lg flex items-center justify-center"
                 whileTap={{ scale: 0.9 }}
                 animate={isCalling ? { scale: [1, 1.1, 1], transition: { repeat: Infinity, duration: 0.8 } } : {}}
+                disabled={mode === "Batch"}
             >
                 <MdLocalPhone className="mr-2" />
                 {isCalling ? "Calling..." : "Initiate Cold Call"}
